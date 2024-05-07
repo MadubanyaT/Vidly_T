@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const {Genres, validate} = require('../models/genre');
+const auth = require('../middleware/auth');
+const admin = require('../middleware/admin');
 
 router.get('/', async (req, res) =>{
 
@@ -18,10 +20,14 @@ router.get('/:id', async (req, res) =>{
 });
 
 //POST
-router.post('/', async (req, res) => {
+router.post('/', auth, async (req, res) => {
+    //The user must be authenticated to use this http method
+    const token = req.header('x-auth-token')
+    if(!token) return res.status(401).send('User is not authenticated for this request.');
+
     //Validate
     let {error} = validate(req.body);
-    if(error) return res.status(400).send(error.message);
+    if(error) return res.status(400).send(error.details[0].message);
 
     let genre = new Genres({
         name: req.body.name,
@@ -33,12 +39,12 @@ router.post('/', async (req, res) => {
         res.send(genre);
     }
     catch(err){
-        res.status(400).send(err)
+        res.status(500).send(err)
     }
 });
 
 //PUT
-router.put('/:id', async (req, res) =>{
+router.put('/:id', auth, async (req, res) =>{
     //validate
      let {error} = validate(req.body);
      if(error) return res.status(400).send(error.message);
@@ -51,7 +57,7 @@ router.put('/:id', async (req, res) =>{
 });
 
 //DELETE
-router.delete('/:id', async (req, res) =>{
+router.delete('/:id', [auth, admin], async (req, res) =>{
     const genre = await Genres.findByIdAndDelete(req.params.id);
     if(!genre) return res.status(404).send(`The genre for that id (${req.params.id}) doesn't exist.`);
 
