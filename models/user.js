@@ -21,11 +21,16 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         minlength: 6,
-        maxlength: 1024  /*Hashed password*/
+        maxlength: 1024  /*Hashed password because I'll be storing it in the database*/
     },
-    isAdmin: Boolean
+    isAdmin: {
+        type: Boolean,
+        default: false
+    }
 });
 
+
+// Used to create methods in a schema
 userSchema.methods.generateAuthToken = function() {
     const token = jwt.sign({_id: this._id, isAdmin: this.isAdmin}, config.get('jwtPrivateKey'));
     return token;
